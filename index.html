@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script src="jquery-1.7.2.js" type="text/javascript"></script>
+	</head>
+	<body style="background-color: #111;">
+		<img id="logo" src="logo.png" style="position: absolute;"></img>
+		<canvas id="background" width="600" height="300" style="z-index: -1;"></canvas>
+		<script type="text/javascript" charset="utf-8">
+			$(function()
+			{
+				if(document.createElement('canvas') && navigator && !(navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/iPad/i)))
+				{
+					var xPosInit = 350;
+					var yPosInit = 320;
+					var maxBitSize = 20;
+					var numBits = 130;
+					var maxAge = 1200;
+
+					function Bit(color){
+						this.size = maxBitSize * Math.random();
+						this.color = color;
+
+						this.xpos = xPosInit + Math.random() * 30;
+						this.ypos = yPosInit + Math.random() * 30;
+						this.offset = new Number(100 * Math.random());
+
+						// give it a random vector
+						this.angle = 0.125 * Math.PI;
+
+						// growing vs. shrinking
+						this.down = false;
+
+						// age
+						this.age = 0;
+					}
+
+					function hexToR(h) {return parseInt((cutHex(h)).substring(0,2),16)}
+					function hexToG(h) {return parseInt((cutHex(h)).substring(2,4),16)}
+					function hexToB(h) {return parseInt((cutHex(h)).substring(4,6),16)}
+					function cutHex(h) {return (h.charAt(0)=="#") ? h.substring(1,7):h}
+					
+
+					function bitStep(bit) {
+						if(bit.size >= maxBitSize * (maxAge + 80 - bit.age)/(maxAge + 80) ) {
+							bit.down = true;
+						}
+						if(bit.age >= maxAge) {
+							bit.size = maxBitSize * Math.random();
+							bit.xpos = xPosInit + Math.random() * 30;
+							bit.ypos = yPosInit + Math.random() * 30;
+							bit.offset = new Number(100 * Math.random());
+
+							// give it a random vector
+							bit.angle = 0.125 * Math.PI;
+
+							// growing vs. shrinking
+							bit.down = false;
+
+							// age
+							bit.age = 0;
+						}
+
+						if(bit.size <= 1) {
+							bit.down = false;
+						}
+
+						if(bit.down) {
+							bit.size -= 0.03;
+						}
+						else {
+							bit.size += 0.03;
+						}
+
+						// move the object a little
+						bit.age += 1;
+						var deltaAlpha = 0.0055 + bit.age * 0.00005;
+						bit.angle += deltaAlpha;
+						if(bit.angle > 360) bit.angle -= 360;
+						bit.xpos += 3.5 * Math.sin(bit.angle);
+						bit.ypos += 3 * Math.cos(bit.angle);
+
+						return bit;
+					}
+
+					function tick(bit)
+					{
+						context.shadowColor = bit.color;
+						context.fillStyle = bit.color;
+
+						var scrollX = window.pageXOffset;
+						var scrollY = window.pageYOffset;
+
+						bit = bitStep(bit);
+
+						context.beginPath();  
+						context.arc(bit.xpos,bit.ypos,bit.size,0,Math.PI*2,true); // Outer circle  
+						var alpha = 1;
+						if(bit.age < 100) {
+							alpha = bit.age / 100;
+						}
+						if(bit.age > maxAge - 100) {
+							alpha = (maxAge - bit.age) / 100;
+						}
+						context.fillStyle = "rgba(" + hexToR(bit.color) + ", " + hexToG(bit.color) + "," + hexToB(bit.color) + "," + alpha +")";
+						context.fill();
+					}
+
+					function reDraw()
+					{
+						var scrollX = window.pageXOffset;
+						var scrollY = window.pageYOffset;
+
+						// background gradient
+						var logoHeight = $("#logo").outerHeight();
+						logoHeight = logoHeight == 0 ? 84 : logoHeight;
+						var logoPosition = $("#logo").position();
+						var logoHeight = $("#logo").outerHeight();
+						logoHeight = logoHeight == 0 ? 84 : logoHeight;
+						var logoWidth = $("#logo").outerWidth();
+						logoWidth = logoWidth == 0 ? 753 : logoWidth;
+						var radius = 450;
+						var highlightOffset = {left: 95, top: -10};
+						var radgrad = context.createRadialGradient(logoPosition.left + logoWidth / 2 + highlightOffset.left, logoPosition.top + logoHeight / 2 + highlightOffset.top, 0, logoPosition.left + logoWidth / 2 + highlightOffset.left, logoPosition.top + logoHeight / 2 + highlightOffset.top, radius);
+
+						// background gradient
+						radgrad.addColorStop(0, '#000');
+						radgrad.addColorStop(0.7, '#111');
+						context.clearRect(0,0,canvas.width, canvas.height);
+						context.fillStyle = radgrad;
+						context.fillRect(logoPosition.left + logoWidth/2 - radius + highlightOffset.left, logoPosition.top + logoHeight/2 - radius + highlightOffset.top, logoPosition.left + logoWidth/2 + radius + highlightOffset.left, logoPosition.top + logoHeight/2 + radius, highlightOffset.top);
+						bits.map(tick);
+					}
+
+					function getDocHeight() {
+						return "innerHeight" in window ? window.innerHeight : document.documentElement.offsetHeight;
+					}
+
+					function getDocWidth() {
+						return "innerWidth" in window ? window.innerWidth : document.documentElement.offsetWidth;
+					}
+
+					function updatePosition() {
+						var logoWidth = $("#logo").outerWidth();
+						logoWidth = logoWidth == 0 ? 753 : logoWidth;
+						var logoHeight = $("#logo").outerHeight();
+						logoHeight = logoHeight == 0 ? 84 : logoHeight;
+						console.log(logoHeight);
+						$("#logo").css({
+							position: "absolute",
+							top: (getDocHeight() - logoHeight) / 2 + "px",
+							left: (getDocWidth() - logoWidth) / 2 + "px"
+						}).show();
+
+						var logoPosition = $("#logo").position();
+						xPosInit = logoPosition.left + 40;
+						yPosInit = logoPosition.top;
+						canvas.width = screen.width;
+						canvas.height = getDocHeight();
+					}
+					
+					document.body.style['background-image'] = 'url()';
+					document.body.style['backgroundImage'] = 'url()';
+					document.body.style['background-attachment'] = 'fixed';
+
+					// object colors, chosen at random
+					var colours = ['#006600', '#00ee11', '#00ff55', '#003300'];
+
+					// preparing the canvas
+					maxX = screen.availWidth + 40;
+					var canvas = document.getElementById('background');
+					canvas.width = screen.width;
+					canvas.height = getDocHeight();
+					var context = canvas.getContext('2d');
+					context.globalAlpha = 0.7;
+					context.shadowBlur = 7;
+					updatePosition();
+
+					// creating the objects
+					var bits = new Array(numBits);
+					var bit;
+					for(var i = 0; i < numBits; ++i)
+					{
+						// get a random size and a random from our list
+						bit = new Bit(colours[Math.floor(colours.length * Math.random())]);
+
+						// compute the starting position
+						var numSteps = maxAge * Math.random();
+						for(var j = 0; j < numSteps; j++) {
+							bit = bitStep(bit);
+						}
+
+						bits[i] = bit;
+					}
+
+					setInterval(reDraw, 50);
+
+					$(window).resize(function() {
+							updatePosition();
+					});
+				}
+			});
+		</script>
+	</body>
+</html>
